@@ -241,14 +241,17 @@ class PlotlyElement:
         html_target_path = config["assets_path"].joinpath(tag)
         html_rel_path = Path("./" + str(html_target_path).replace(str(html_target_path.parents[2]), "."))
         self.content.write_html(html_target_path)
+
         if config["plotly_thumbnails"]:
             png_target_path = Path(str(html_target_path).replace(".html", ".png"))
             png_rel_path = Path("./" + str(png_target_path).replace(str(png_target_path.parents[2]), "."))
             self.content.write_image(png_target_path)
+
             img = D.a(D.img(src=png_rel_path, width="100%", _class="text-center"), href=html_rel_path, target="_blank")
-            # tag = D.p(self.tag, _class="text-center")
+
         else:
             img = D.iframe(src=html_rel_path, width="100%", _class="text-center")
+
         tag = D.p(
             [self.tag, D.a(D.i(_class="fa-solid fa-up-right-from-square text-center"), href=html_rel_path, target="_blank")],
             _class="text-center",
