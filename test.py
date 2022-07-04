@@ -2,7 +2,7 @@ import numpy as np
 import plotly.express as px
 from matplotlib import pyplot as plt
 
-import rrg.report as rrg
+import rrg
 
 
 def _make_plt_hist():
