@@ -65,7 +65,7 @@ def main():
     report = rrg.Report(path="./example_reports/gauss_vs_cauchy.html", title="Gauss vs. Cauchy", plotly_thumbnails=False)
 
     fig_3d = plotly_3d(gauss, cauchy)
-    report.add_element(rrg.SectionHeader("Cauchy distributions have many outliers..."))
+    report.add_element(rrg.SectionHeader("Cauchy distributions have long tails..."))
     report.add_element(
         rrg.Cols(
             {
@@ -79,7 +79,7 @@ It is easy to show the Cauchy distribution does not have a well-defined variance
 
 \[\int_{-\infty}^\infty dx~x^2p(x) =\int_{-\infty}^\infty dx~\frac{x^2}{1+x^2} \]
 
-Note the integrand tends to \(1\) as \(x\rightarrow \infty\), ensuring the integral diverges.
+Note the integrand tends to \(1\) as \(|x|\rightarrow \infty\), ensuring the integral diverges.
 """
                 ),
             }
