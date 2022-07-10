@@ -23,7 +23,7 @@ def plotly_2d(g: np.ndarray, c: np.ndarray, x: int, y: int) -> go.Figure:
         trace = go.Scattergl(x=arr[x], y=arr[y], marker=dict(opacity=0.5), name=k, mode="markers")
         fig.add_trace(trace)
 
-    fig.update_layout(height=400)
+    fig = rrg.Plotly(fig, height="400px")
     return fig
 
 
@@ -38,7 +38,7 @@ def plotly_3d(g: np.ndarray, c: np.ndarray) -> go.Figure:
         trace = go.Scatter3d(x=arr[0], y=arr[1], z=arr[2], marker=dict(opacity=0.5), name=k, mode="markers")
         fig.add_trace(trace)
 
-    fig.update_layout(height=600)
+    fig = rrg.Plotly(fig, height="600px")
     return fig
 
 

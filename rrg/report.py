@@ -27,7 +27,20 @@ except ImportError:
             ...
 
 
-__all__ = ["Report", "Cols1", "Cols2", "Cols3", "Cols", "SectionHeader", "Divider", "Markdown", "Text", "HTML"]
+__all__ = [
+    "Report",
+    "Cols1",
+    "Cols2",
+    "Cols3",
+    "Cols",
+    "SectionHeader",
+    "Divider",
+    "Markdown",
+    "Text",
+    "HTML",
+    "Plotly",
+    "Pyplot",
+]
 
 
 def _Container(*args, **kwargs):
@@ -219,11 +232,19 @@ def _resolve_element(el, tag):
     elif isinstance(el, go.Figure):
         return PlotlyElement(el, tag)
 
+    elif isinstance(el, BaseElement) and hasattr(el, "tag"):
+        el.tag = tag
+        return el
+
     else:
         return el
 
 
-class TextElement:
+class BaseElement:
+    ...
+
+
+class TextElement(BaseElement):
     def __init__(self, el):
         self.content = el
 
@@ -233,7 +254,7 @@ class TextElement:
         )
 
 
-class HTMLElement:
+class HTMLElement(BaseElement):
     def __init__(self, el):
         self.content = str(el)
 
@@ -246,22 +267,29 @@ class MarkdownElement(HTMLElement):
         self.content = markdown(el)
 
 
-Text = TextElement
-HTML = HTMLElement
-Markdown = MarkdownElement
-
-
-class MatplotlibElement:
-    def __init__(self, el: plt.Figure, tag: str):
+class MatplotlibElement(BaseElement):
+    def __init__(self, el: plt.Figure, tag: str = None, height=None, width="100%"):
         self.content = el
         self.tag = tag
+        self.height = height
+        self.width = width
 
     def _get_html(self, config: dict):
         tag = uuid4().hex + ".png"
         target_path = config["assets_path"].joinpath(tag)
         rel_path = Path(str(target_path).replace(str(target_path.parents[2]), "."))
         self.content.savefig(target_path)
-        img = D.a(D.img(src=rel_path, width="100%", _class="text-center"), href=rel_path, target="_blank")
+
+        kwarg = {}
+        if self.height is not None:
+            kwarg["height"] = self.height
+
+        img = D.a(
+            D.img(src=rel_path, width=self.width, _class="text-center"),
+            href=rel_path,
+            target="_blank",
+            **kwarg,
+        )
         tag = D.p(
             [self.tag, D.a(D.i(_class="fa-solid fa-up-right-from-square text-center"), href=rel_path, target="_blank")],
             _class="text-center",
@@ -274,10 +302,12 @@ class MatplotlibElement:
         )
 
 
-class PlotlyElement:
-    def __init__(self, el: go.Figure, tag: str):
+class PlotlyElement(BaseElement):
+    def __init__(self, el: go.Figure, tag: str = None, height=None, width="100%"):
         self.content = el
         self.tag = tag
+        self.height = height
+        self.width = width
 
     def _get_html(self, config: dict):
         tag = uuid4().hex + ".html"
@@ -290,15 +320,25 @@ class PlotlyElement:
             png_rel_path = Path("./" + str(png_target_path).replace(str(png_target_path.parents[2]), "."))
             self.content.write_image(png_target_path)
 
-            img = D.a(D.img(src=png_rel_path, width="100%", _class="text-center"), href=html_rel_path, target="_blank")
+            kwarg = {}
+            if self.height is not None:
+                kwarg["height"] = self.height
+
+            img = D.a(
+                D.img(src=png_rel_path, width=self.width, _class="text-center", **kwarg),
+                href=html_rel_path,
+                target="_blank",
+            )
 
         else:
-            height = self.content.layout.height
-            if height is not None:
-                height_kwarg = {"height": f"{height}px"}
+            kwarg = {}
+            if self.height is None:
+                height = self.content.layout.height
+                if height is not None:
+                    kwarg["height"] = f"{height}px"
             else:
-                height_kwarg = {}
-            img = D.iframe(src=html_rel_path, width="100%", _class="text-center", **height_kwarg)
+                kwarg["height"] = self.height
+            img = D.iframe(src=html_rel_path, width=self.width, _class="text-center", **kwarg)
 
         tag = D.p(
             [self.tag, D.a(D.i(_class="fa-solid fa-up-right-from-square text-center"), href=html_rel_path, target="_blank")],
@@ -306,3 +346,10 @@ class PlotlyElement:
         )
 
         return D.div([img, tag])
+
+
+Text = TextElement
+HTML = HTMLElement
+Markdown = MarkdownElement
+Plotly = PlotlyElement
+Pyplot = MatplotlibElement
