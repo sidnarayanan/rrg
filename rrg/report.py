@@ -5,8 +5,9 @@ from uuid import uuid4
 
 from dominate import document
 from dominate import tags as D
-from dominate.util import text
+from dominate.util import text, raw
 from loguru import logger
+from markdown2 import markdown
 
 try:
     from matplotlib import pyplot as plt
@@ -26,7 +27,7 @@ except ImportError:
             ...
 
 
-__all__ = ["Report", "Cols1", "Cols2", "Cols3", "SectionHeader", "Divider"]
+__all__ = ["Report", "Cols1", "Cols2", "Cols3", "Cols", "SectionHeader", "Divider", "Markdown", "Text", "HTML"]
 
 
 def _Container(*args, **kwargs):
@@ -95,6 +96,7 @@ class Report:
                 with _Row():
                     with _Col12():
                         D.h1(self.title)
+                        Divider(strength=7)._get_html()
 
         if self._assets_path.exists():
             rmtree(self._assets_path)
@@ -141,7 +143,7 @@ class _NCols(ABC):
             try:
                 el_html = el._get_html(config)
             except AttributeError:
-                el_html = el
+                el_html = str(el)
             rows.append(_Col(el_html, c=self.col_cls))
 
         rows = _Row(rows)
@@ -164,18 +166,39 @@ class Cols2(_NCols):
     col_cls = "lg-6"
 
 
+class Cols(_NCols):
+    def __init__(self, elements):
+        N = self.n_cols = len(elements)
+
+        if N == 1:
+            c = "xl-12"
+        elif N == 2:
+            c = "lg-6"
+        elif N == 3:
+            c = "lg-4"
+        elif N == 4:
+            c = "md-3"
+        elif N < 7:
+            c = "sm-2"
+        else:
+            c = "sm-1"
+        self.col_cls = c
+
+        super().__init__(elements)
+
+
 class Divider:
-    def __init__(self, strength: int = 10):
+    def __init__(self, strength: int = 5):
         self.style = f"height:{strength}px;border:none;color:#000;background-color:#000;"
 
-    def _get_html(self, config: dict):
+    def _get_html(self, config: dict = None):
         return D.hr(style=self.style)
 
 
 class SectionHeader:
     def __init__(self, name: str):
         self.divider = Divider()
-        self.text = Cols1(D.h2(name))
+        self.text = HTMLElement(D.h2(name))
         self._id = name.replace(" ", "_")
         self._name = name
 
@@ -184,7 +207,10 @@ class SectionHeader:
 
 
 def _resolve_element(el, tag):
-    if isinstance(el, str):
+    if isinstance(el, D.html_tag):
+        return HTMLElement(el)
+
+    elif isinstance(el, str):
         return TextElement(el)
 
     elif isinstance(el, plt.Figure):
@@ -204,8 +230,25 @@ class TextElement:
     def _get_html(self, assets_path: Path):
         return D.p(
             self.content,
-            style="color:#555;",
         )
+
+
+class HTMLElement:
+    def __init__(self, el):
+        self.content = str(el)
+
+    def _get_html(self, assets_path: Path):
+        return raw(self.content)
+
+
+class MarkdownElement(HTMLElement):
+    def __init__(self, el):
+        self.content = markdown(el)
+
+
+Text = TextElement
+HTML = HTMLElement
+Markdown = MarkdownElement
 
 
 class MatplotlibElement:
@@ -219,14 +262,14 @@ class MatplotlibElement:
         rel_path = Path(str(target_path).replace(str(target_path.parents[2]), "."))
         self.content.savefig(target_path)
         img = D.a(D.img(src=rel_path, width="100%", _class="text-center"), href=rel_path, target="_blank")
+        tag = D.p(
+            [self.tag, D.a(D.i(_class="fa-solid fa-up-right-from-square text-center"), href=rel_path, target="_blank")],
+            _class="text-center",
+        )
         return D.div(
             [
                 img,
-                D.p(
-                    self.tag,
-                    _class="text-center",
-                    style="color:#555;",
-                ),
+                tag,
             ]
         )
 
@@ -250,12 +293,16 @@ class PlotlyElement:
             img = D.a(D.img(src=png_rel_path, width="100%", _class="text-center"), href=html_rel_path, target="_blank")
 
         else:
-            img = D.iframe(src=html_rel_path, width="100%", _class="text-center")
+            height = self.content.layout.height
+            if height is not None:
+                height_kwarg = {"height": f"{height}px"}
+            else:
+                height_kwarg = {}
+            img = D.iframe(src=html_rel_path, width="100%", _class="text-center", **height_kwarg)
 
         tag = D.p(
             [self.tag, D.a(D.i(_class="fa-solid fa-up-right-from-square text-center"), href=html_rel_path, target="_blank")],
             _class="text-center",
-            style="color:#555;",
         )
 
         return D.div([img, tag])

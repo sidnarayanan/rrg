@@ -1,5 +1,3 @@
 dominate
-black
-pylint
-pytest
 loguru
+markdown2
