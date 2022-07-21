@@ -62,7 +62,7 @@ def main():
     gauss = shear(rng.normal(size=(10, 3)))
     cauchy = shear(rng.standard_cauchy(size=(10, 3)))
 
-    report = rrg.Report(path="./example_reports/gauss_vs_cauchy.html", title="Gauss vs. Cauchy", plotly_thumbnails=False)
+    report = rrg.Report(title="Gauss vs. Cauchy", plotly_thumbnails=False)
 
     fig_3d = plotly_3d(gauss, cauchy)
     report.add_element(rrg.SectionHeader("Cauchy distributions have long tails..."))
@@ -101,7 +101,7 @@ Note the integrand tends to \(1\) as \(|x|\rightarrow \infty\), ensuring the int
     report.add_element(rrg.SectionHeader("...or 1D histograms..."))
     report.add_element(rrg.Cols(figs_1d))
 
-    report.write()
+    report.write(path="./example_reports/gauss_vs_cauchy.html")
 
 
 if __name__ == "__main__":

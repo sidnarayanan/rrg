@@ -60,16 +60,22 @@ def _Row(*args, **kwargs):
 
 
 class Report:
-    def __init__(self, path: str, title: str = "Generated report", plotly_thumbnails: bool = True):
+    def __init__(self, title: str = "Generated report", plotly_thumbnails: bool = True, path: str = None, toc_width: int = 2):
+        self._setup_path(path)
+        self.title = title
+        self._plotly_thumbnails = plotly_thumbnails
+        self._toc_width = toc_width
+
+        self._elements = []
+        self._toc = []
+
+    def _setup_path(self, path: str):
+        if path is None:
+            return
         self._html_path = Path(path).expanduser()
         self._dir_path = self._html_path.parent
         file_name = self._html_path.stem
         self._assets_path = self._dir_path.joinpath("assets").joinpath(file_name)
-        self.title = title
-        self._plotly_thumbnails = plotly_thumbnails
-
-        self._elements = []
-        self._toc = []
 
     def add_element(self, element):
         if isinstance(element, SectionHeader):
@@ -84,7 +90,11 @@ class Report:
         for el in elements:
             self.add_element(el)
 
-    def write(self):
+    def write(self, path: str = None):
+        self._setup_path(path)
+        if not hasattr(self, "_html_path"):
+            raise RuntimeError("Trying to call Report.write() without specifying an output path.")
+
         doc = document(title=self.title)
         with doc.head:
             for stylesheet in [
@@ -119,10 +129,10 @@ class Report:
             if self._toc:
                 with _Container():
                     with _Row():
-                        with _Col(c="md-2"):
+                        with _Col(c=f"md-{self._toc_width}"):
                             for name, id_ in self._toc:
                                 D.p(D.a(name, href="#" + id_))
-                        with _Col(c="md-10"):
+                        with _Col(c=f"lg-{12-self._toc_width}"):
                             self._write_elements()
             else:
                 self._write_elements()
