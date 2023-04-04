@@ -323,7 +323,7 @@ class PlotlyElement(BaseElement):
         tag = uuid4().hex + ".html"
         html_target_path = config["assets_path"].joinpath(tag)
         html_rel_path = Path("./" + str(html_target_path).replace(str(html_target_path.parents[2]), "."))
-        self.content.write_html(html_target_path)
+        self.content.write_html(html_target_path, include_plotlyjs="cdn", auto_play=False)
 
         if config["plotly_thumbnails"]:
             png_target_path = Path(str(html_target_path).replace(".html", ".png"))
